@@ -1,0 +1,15 @@
+version: '3'
+services:
+    zabbix:
+        image: whaleway/zabbix-server-inbuilt-mysql:latest
+        ports:
+            - "8011:80"
+            - "10051:10051"
+        cap_add:
+            - SYS_RESOURCE
+            - SYS_ADMIN
+        security_opt:
+            - 'apparmor:unconfined'
+        tmpfs:
+            - /run
+            - /sys/fs/cgroup
