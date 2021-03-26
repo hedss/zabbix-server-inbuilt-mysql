@@ -49,7 +49,8 @@ RUN cd / \
     && printf "[mysqld]\ndefault_authentication_plugin= mysql_native_password" >> /etc/mysql/my.cnf
 
 # Get Zabbix release
-RUN curl -o zabbix.deb https://repo.zabbix.com/zabbix/5.2/debian/pool/main/z/zabbix-release/zabbix-release_5.2-1+debian10_all.deb \
+# Currently skip TLS cert verification, because Zabbix have let their cert expire
+RUN curl -k -o zabbix.deb https://repo.zabbix.com/zabbix/5.2/debian/pool/main/z/zabbix-release/zabbix-release_5.2-1+debian10_all.deb \
     && dpkg -i zabbix.deb \
     && apt update \
     && rm -rf /var/lib/apt/lists/*
@@ -70,6 +71,10 @@ RUN systemctl enable mysql zabbix-server zabbix-agent apache2
 
 # Copy entry script
 COPY entry.sh /usr/src/app/
+
+# Copy web config for Zabbix
+RUN rm -f /usr/share/zabbix/config/zabbix.conf.php
+COPY zabbix.conf.php /etc/zabbix/web/
 
 # Ensure stop for systemd is honoured
 STOPSIGNAL SIGRTMIN+3
