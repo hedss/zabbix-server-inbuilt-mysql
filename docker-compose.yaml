@@ -1,4 +1,6 @@
 version: '3'
+volumes:
+    zabbix-mysql:
 services:
     zabbix:
         image: whaleway/zabbix-server-inbuilt-mysql:latest
@@ -10,6 +12,8 @@ services:
             - SYS_ADMIN
         security_opt:
             - 'apparmor:unconfined'
+        volumes:
+            - zabbix-mysql:/var/lib/mysql
         tmpfs:
             - /run
             - /sys/fs/cgroup

@@ -9,7 +9,7 @@ ENV container docker
 
 # Install everything required for systemd, including dbus, and other utils
 # required. nano is for convenience
-RUN apt-get update && apt-get dist-upgrade &&  apt-get install -y --no-install-recommends \
+RUN apt-get update && apt-get -y dist-upgrade && apt-get install -y --no-install-recommends \
     apt-transport-https \
     ca-certificates \
     curl \
@@ -35,18 +35,18 @@ RUN systemctl mask \
     getty.target \
     graphical.target
 
-# Get MySQL, and install it
+# Get MySQL, and install it, but remove the default data directory
 RUN curl -L -o mysql-apt.deb https://dev.mysql.com/get/mysql-apt-config_0.8.16-1_all.deb \
     && apt install ./mysql-apt.deb \
     && apt update \
     && apt -y install mysql-server \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/* \
+    && rm -rf /var/lib/mysql
 
-# Copy the preconfigured database across, ready for use
+# Copy the preconfigured database across, and then ensure we change the config
 COPY mysql.tgz /usr/src/app/
-RUN cd / \
-    && tar xvfz /usr/src/app/mysql.tgz \
-    && printf "[mysqld]\ndefault_authentication_plugin= mysql_native_password" >> /etc/mysql/my.cnf
+RUN printf "[mysqld]\ndefault_authentication_plugin= mysql_native_password" >> /etc/mysql/my.cnf \
+    && sed -i $'s/\[mysqld\]/\[mysqld\]\\\nskip-grant-tables/' /etc/mysql/mysql.conf.d/mysqld.cnf
 
 # Get Zabbix release
 # Currently skip TLS cert verification, because Zabbix have let their cert expire
@@ -54,9 +54,6 @@ RUN curl -k -o zabbix.deb https://repo.zabbix.com/zabbix/5.2/debian/pool/main/z/
     && dpkg -i zabbix.deb \
     && apt update \
     && rm -rf /var/lib/apt/lists/*
-
-# Ensure we can locally login
-RUN sed -i $'s/\[mysqld\]/\[mysqld\]\\\nskip-grant-tables/' /etc/mysql/mysql.conf.d/mysqld.cnf
 
 # Install Zabbix server, agent and web requirements
 RUN  apt update \
